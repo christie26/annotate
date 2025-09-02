@@ -82,6 +82,15 @@ class ImageLabelingApp:
 
         self.exit_radio = Radiobutton(self.label_frame, text="Exit", variable=self.mode_var, value="exit")
         self.exit_radio.pack(side=LEFT, padx=5)
+
+        # clear/not clear switch (radiobuttons)
+        self.clear = StringVar(value="clear")
+
+        self.clear_radio = Radiobutton(self.label_frame, text="Clear", variable=self.clear, value="clear")
+        self.clear_radio.pack(side=LEFT, padx=5)
+
+        self.notclear_radio = Radiobutton(self.label_frame, text="Not clear", variable=self.clear, value="not clear")
+        self.notclear_radio.pack(side=LEFT, padx=5)
         # Label entry and set label button
         self.label_entry = Entry(self.label_frame, width=20)
         self.label_entry.pack(side=LEFT, padx=5)
@@ -187,7 +196,7 @@ class ImageLabelingApp:
         vehicle_id = new_folder_name.split("_")[0]
         # Update global CSV file "labels.csv" with columns ID,LABEL
         csv_filename = os.path.join(self.parent_folder,"labels.csv")
-        header = ["ID", "LABEL", "timestamp", "mode"]
+        header = ["ID", "LABEL", "timestamp", "mode", "clear"]
         rows = []
         if os.path.exists(csv_filename):
             import csv
@@ -204,7 +213,8 @@ class ImageLabelingApp:
         if not found:
             timestamp = vehicle_id.split("-")[1]
             mode = self.mode_var.get()
-            rows.append({"ID": vehicle_id, "LABEL": self.label, "timestamp": timestamp, "mode": mode})
+            clear = self.clear.get()
+            rows.append({"ID": vehicle_id, "LABEL": self.label, "timestamp": timestamp, "mode": mode, "clear": clear})
         with open(csv_filename, "w", newline="") as csvfile:
             writer = __import__('csv').DictWriter(csvfile, fieldnames=header)
             writer.writeheader()
