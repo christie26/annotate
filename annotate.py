@@ -2,6 +2,26 @@ import os
 from tkinter import *
 from tkinter import filedialog
 from PIL import Image, ImageTk, ImageEnhance
+import csv
+
+def read_sensor_times(sensor_name: str):
+    csv_path = "sensor_time.csv"
+
+    if not os.path.exists(csv_path):
+        print(f"⚠️ No sensor_time.csv")
+        return None, None  # no match
+
+    with open(csv_path, newline="") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            if row["sensor"] == sensor_name:
+                # Return the first match (or you can store all matches in a list)
+                return row["start_time"], row["end_time"]
+
+    # If no matching sensor found
+    print(f"⚠️ No matching sensor '{sensor_name}' in sensor_time.csv")
+    return None, None
+
 class ImageLabelingApp:
     def __init__(self, root):
         self.root = root
@@ -114,8 +134,22 @@ class ImageLabelingApp:
         """Load the parent folder containing car subfolders."""
         self.parent_folder = filedialog.askdirectory(title="Select Parent Folder Containing Car Subfolders")
         if self.parent_folder:
+            # print(f"self.parent_folder: {self.parent_folder}")
+            sensor_name = self.parent_folder.split("/")[-1]
+            start, end = read_sensor_times(sensor_name)
             self.car_folders = [d for d in os.listdir(self.parent_folder)
                                 if os.path.isdir(os.path.join(self.parent_folder, d))]
+            # Filter folders
+            filtered_folders = []
+            for folder in self.car_folders:
+                try:
+                    folder_time = folder.split("-")[1]  # get timestamp after "-"
+                    if start <= folder_time <= end:
+                        filtered_folders.append(folder)
+                except IndexError:
+                    # skip folders that don't match the expected format
+                    continue
+            self.car_folders = filtered_folders
             print(f"You will investigate {len(self.car_folders)} folders.")
             if self.car_folders:
                 self.current_car_index = 0
