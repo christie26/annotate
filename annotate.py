@@ -264,7 +264,7 @@ class ImageLabelingApp:
             for row in rows:
                 writer.writerow(row)
         print(f"Label updated in {csv_filename}")
-        self.next_car()
+        self.next_car_wo_label()
     def next_image(self):
         if self.current_image_index < len(self.image_files) - 1:
             self.current_image_index += 1
