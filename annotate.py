@@ -240,7 +240,7 @@ class ImageLabelingApp:
                     rows.append(row)
         found = False
         for row in rows:
-            if row["ID"] == vehicle_id:
+            if row["ID"] == vehicle_id and row["mode"] == self.mode_var.get():
                 row["LABEL"] = self.label
                 found = True
                 break
