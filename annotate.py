@@ -33,39 +33,61 @@ class ImageLabelingApp:
         # Create UI components
         self.top_frame = Frame(root)
         self.top_frame.pack(pady=5, fill=X)
+
         # Display current car folder
         self.car_label = Label(self.top_frame, text="No car folder loaded")
         self.car_label.pack()
+                # load frame with load button
+        self.load_frame = Frame(root)
+        self.load_frame.pack(pady=5)
+        self.load_button = Button(self.load_frame, text="Load Parent Folder", command=self.load_parent_folder)
+        self.load_button.pack(side=LEFT, padx=5)
+
         # Frame for image display; it expands with window resizing
         self.label_frame = Frame(root)
         self.label_frame.pack(fill=BOTH, expand=True)
         self.image_label = Label(self.label_frame)
         self.image_label.pack(fill=BOTH, expand=True)
+
         # Control frame with buttons, label entry, and contrast slider
         self.control_frame = Frame(root)
-        self.control_frame.pack(pady=5, fill=X)
+        self.control_frame.pack(pady=5)
         # Car navigation buttons
         self.prev_car_button = Button(self.control_frame, text="Previous Car", command=self.previous_car)
         self.prev_car_button.pack(side=LEFT, padx=5)
         self.next_car_button = Button(self.control_frame, text="Next Car", command=self.next_car)
+        self.next_car_button.pack(side=LEFT, padx=5)
+        self.next_car_button = Button(self.control_frame, text="Next Car w/o label", command=self.next_car_wo_label)
         self.next_car_button.pack(side=LEFT, padx=5)
         # Image navigation buttons
         self.prev_button = Button(self.control_frame, text="Previous Image", command=self.previous_image)
         self.prev_button.pack(side=LEFT, padx=5)
         self.next_button = Button(self.control_frame, text="Next Image", command=self.next_image)
         self.next_button.pack(side=LEFT, padx=5)
-        # Label entry and set label button
-        self.label_entry = Entry(self.control_frame, width=20)
-        self.label_entry.pack(side=LEFT, padx=5)
-        self.label_button = Button(self.control_frame, text="Set Label", command=self.set_label)
-        self.label_button.pack(side=LEFT, padx=5)
-        self.load_button = Button(self.control_frame, text="Load Parent Folder", command=self.load_parent_folder)
-        self.load_button.pack(side=LEFT, padx=5)
+
+        # label frame with label entry, and contrast slider
+        self.label_frame = Frame(root)
+        self.label_frame.pack(pady=5)
+
         # Contrast slider (cursor) for adjusting contrast
-        self.contrast_scale = Scale(self.control_frame, from_=0.5, to=2.0, resolution=0.1,
+        self.contrast_scale = Scale(self.label_frame, from_=0.5, to=2.0, resolution=0.1,
                                     orient=HORIZONTAL, label="Contrast", command=self.on_contrast_change)
         self.contrast_scale.set(1.0)
         self.contrast_scale.pack(side=LEFT, padx=5)
+        # Entry/Exit switch (radiobuttons)
+        self.mode_var = StringVar(value="entry")  # default is "entry"
+
+        self.entry_radio = Radiobutton(self.label_frame, text="Entry", variable=self.mode_var, value="entry")
+        self.entry_radio.pack(side=LEFT, padx=5)
+
+        self.exit_radio = Radiobutton(self.label_frame, text="Exit", variable=self.mode_var, value="exit")
+        self.exit_radio.pack(side=LEFT, padx=5)
+        # Label entry and set label button
+        self.label_entry = Entry(self.label_frame, width=20)
+        self.label_entry.pack(side=LEFT, padx=5)
+        self.label_button = Button(self.label_frame, text="Set Label", command=self.set_label)
+        self.label_button.pack(side=LEFT, padx=5)
+        
         # Bind window resize event to update the image display dynamically
         self.root.bind("<Configure>", self.on_resize)
     def on_setting_change(self):
@@ -85,6 +107,7 @@ class ImageLabelingApp:
         if self.parent_folder:
             self.car_folders = [d for d in os.listdir(self.parent_folder)
                                 if os.path.isdir(os.path.join(self.parent_folder, d))]
+            print(f"You will investigate {len(self.car_folders)} folders.")
             if self.car_folders:
                 self.current_car_index = 0
                 self.load_car_folder()
@@ -96,7 +119,7 @@ class ImageLabelingApp:
         """Load images from the current car folder and update display."""
         current_car = self.car_folders[self.current_car_index]
         self.image_folder = os.path.join(self.parent_folder, current_car)
-        self.car_label.config(text=f"Current Car: {current_car}")
+        self.car_label.config(text=f"Current Car: {current_car} \n{self.current_car_index}/{len(self.car_folders)}")
         self.image_files = [f for f in os.listdir(self.image_folder)
                             if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
         self.current_image_index = 0
@@ -164,7 +187,7 @@ class ImageLabelingApp:
         vehicle_id = new_folder_name.split("_")[0]
         # Update global CSV file "labels.csv" with columns ID,LABEL
         csv_filename = os.path.join(self.parent_folder,"labels.csv")
-        header = ["ID", "LABEL"]
+        header = ["ID", "LABEL", "timestamp", "mode"]
         rows = []
         if os.path.exists(csv_filename):
             import csv
@@ -179,7 +202,9 @@ class ImageLabelingApp:
                 found = True
                 break
         if not found:
-            rows.append({"ID": vehicle_id, "LABEL": self.label})
+            timestamp = vehicle_id.split("-")[1]
+            mode = self.mode_var.get()
+            rows.append({"ID": vehicle_id, "LABEL": self.label, "timestamp": timestamp, "mode": mode})
         with open(csv_filename, "w", newline="") as csvfile:
             writer = __import__('csv').DictWriter(csvfile, fieldnames=header)
             writer.writeheader()
@@ -201,9 +226,18 @@ class ImageLabelingApp:
     def next_car(self):
         if self.current_car_index < len(self.car_folders) - 1:
             self.current_car_index += 1
+            print(f"{self.current_car_index}/{len(self.car_folders)}")
             self.load_car_folder()
         else:
             print("No more car folders.")
+    def next_car_wo_label(self):
+        while self.current_car_index < len(self.car_folders) - 1:
+            self.current_car_index += 1
+            folder_name = os.path.basename(self.car_folders[self.current_car_index])
+            if "_" not in folder_name:
+                self.load_car_folder()
+                return
+        print("No more car folders without '_' in the name.")
     def previous_car(self):
         if self.current_car_index > 0:
             self.current_car_index -= 1
