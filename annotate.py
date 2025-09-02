@@ -3,6 +3,7 @@ from tkinter import *
 from tkinter import filedialog
 from PIL import Image, ImageTk, ImageEnhance
 import csv
+from collections import Counter
 
 def read_sensor_times(sensor_name: str):
     csv_path = "sensor_time.csv"
@@ -165,6 +166,14 @@ class ImageLabelingApp:
         self.car_label.config(text=f"Current Car: {current_car} \n{self.current_car_index}/{len(self.car_folders)}")
         self.image_files = [f for f in os.listdir(self.image_folder)
                             if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+        
+        # get most common plates 
+        plates = [f.split("_")[-1].split(".")[0] for f in self.image_files]
+        counter = Counter(plates)
+        most_common_plate, count = counter.most_common(1)[0]
+        self.label_entry.delete(0, "end")
+        self.label_entry.insert(0, most_common_plate)
+
         self.current_image_index = 0
         if self.image_files:
             self.show_image()
@@ -255,6 +264,7 @@ class ImageLabelingApp:
             for row in rows:
                 writer.writerow(row)
         print(f"Label updated in {csv_filename}")
+        self.next_car()
     def next_image(self):
         if self.current_image_index < len(self.image_files) - 1:
             self.current_image_index += 1
