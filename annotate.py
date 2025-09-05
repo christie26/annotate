@@ -51,6 +51,10 @@ class ImageLabelingApp:
                                       command=self.on_setting_change)
         self.menubar.add_cascade(label="Settings", menu=settings_menu)
         self.root.config(menu=self.menubar)
+        self.root.bind("<Configure>", self.on_resize)
+        self.root.bind("<Up>", lambda event: self.previous_image())         
+        self.root.bind("<Down>", lambda event: self.next_image())         
+
         # Create UI components
         self.top_frame = Frame(root)
         self.top_frame.pack(pady=5, fill=X)
@@ -115,6 +119,8 @@ class ImageLabelingApp:
         # Label entry and set label button
         self.label_entry = Entry(self.label_frame, width=20)
         self.label_entry.pack(side=LEFT, padx=5)
+        self.label_entry.bind("<Return>", lambda event: self.set_label())  # <-- add this
+
         self.label_button = Button(self.label_frame, text="Set Label", command=self.set_label)
         self.label_button.pack(side=LEFT, padx=5)
         
